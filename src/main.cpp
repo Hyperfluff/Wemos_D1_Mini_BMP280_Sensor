@@ -22,8 +22,13 @@ char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
 
+// variables
+unsigned long lastBlinkMillis = 0;
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
+  //store last time data came in from the broker
+  lastBlinkMillis = millis();
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
   Serial.print("Message:");
@@ -105,6 +110,7 @@ void setup()
 
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
+  lastBlinkMillis = millis();
 }
 
 void loop()
@@ -124,5 +130,9 @@ void loop()
     float pressure = bmp.getPressure();
     client.publish(temperature_topic, String(temperature).c_str());
     client.publish(pressure_topic, String(pressure).c_str());
+  }
+
+  if (now - lastBlinkMillis > 5000){
+    ESP.restart();
   }
 }
