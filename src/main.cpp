@@ -24,6 +24,8 @@ int value = 0;
 
 // variables
 unsigned long lastBlinkMillis = 0;
+float temperature = 0;
+float pressure = 0;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -111,6 +113,9 @@ void setup()
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
   lastBlinkMillis = millis();
+
+  temperature = bmp.getTemperature();
+  pressure = bmp.getPressure();
 }
 
 void loop()
@@ -121,18 +126,20 @@ void loop()
     reconnect();
   }
   client.loop();
-
-  unsigned long now = millis();
-  if (now - lastMsg > MEASURE_INTERVAL)
-  {
-    lastMsg = now;
-    float temperature = bmp.getTemperature();
-    float pressure = bmp.getPressure();
-    client.publish(temperature_topic, String(temperature).c_str());
-    client.publish(pressure_topic, String(pressure).c_str());
+  
+  client.publish(temperature_topic, String(temperature).c_str());
+  client.publish(pressure_topic, String(pressure).c_str());
+  delay(1000);
+  WiFi.disconnect();
+  WiFi.forceSleepBegin();
+  for (int i = 0; i<= 30; i++){
+    Serial.print("Sekunden bis zum Neustart: ");
+    Serial.println(30-i);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    delay(1000);
   }
-
-  if (now - lastBlinkMillis > 5000){
-    ESP.restart();
-  }
+  ESP.restart();
+  // if (now - lastBlinkMillis > 5000){
+  //   ESP.restart();
+  // }
 }
