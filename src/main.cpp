@@ -78,28 +78,8 @@ void reconnect()
   }
 }
 
-void setup()
-{
-  Serial.begin(115200);
-  Serial.println();
-  pinMode(LED_BUILTIN, OUTPUT);    // Turn the LED off by making the voltage HIGH
-  digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off by making the voltage HIGH
-  // Connect to Wi-Fi network with SSID and password
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-  // Print local IP address and start web server
-  Serial.println("");
-  Serial.println("WiFi connected.");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  digitalWrite(LED_BUILTIN, LOW); // Turn the LED off by making the voltage HIGH
 
+void readBMP(){
   bmp.reset();
   Serial.println("bmp read data test");
   while (bmp.begin() != BMP::eStatusOK)
@@ -109,13 +89,42 @@ void setup()
   }
   Serial.println("bmp begin success");
   delay(100);
+  temperature = bmp.getTemperature();
+  pressure = bmp.getPressure();
+  Serial.print("Temperature: ");
+  Serial.println(temperature);
+  Serial.print("Pressure: ");
+  Serial.println(pressure);
+}
 
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println();
+  pinMode(LED_BUILTIN, OUTPUT);    // Turn the LED off by making the voltage HIGH
+  digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off by making the voltage HIGH
+  
+  readBMP();
+  // Connect to Wi-Fi network with SSID and password
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(100);
+    Serial.print(".");
+  }
+  // Print local IP address and start web server
+  Serial.println("");
+  Serial.println("WiFi connected.");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  digitalWrite(LED_BUILTIN, LOW); // Turn the LED off by making the voltage HIGH
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
   lastBlinkMillis = millis();
 
-  temperature = bmp.getTemperature();
-  pressure = bmp.getPressure();
 }
 
 void loop()
@@ -127,14 +136,29 @@ void loop()
   }
   client.loop();
   
-  client.publish(temperature_topic, String(temperature).c_str());
-  client.publish(pressure_topic, String(pressure).c_str());
+  String temperature_message = "{\"sensor_id\":";
+  temperature_message += String(SENSOR_ID);
+  temperature_message +=",\"parameter_id\":2,\"value\":";
+  temperature_message += String(temperature);
+  temperature_message += "}";
+  
+  
+  String pressure_message = "{\"sensor_id\":";
+  pressure_message += String(SENSOR_ID);
+  pressure_message +=",\"parameter_id\":1,\"value\":";
+  pressure_message += String(pressure);
+  pressure_message += "}";
+
+  Serial.println(temperature_message);
+  Serial.println(pressure_message);
+  client.publish(temperature_topic, temperature_message.c_str());
+  client.publish(pressure_topic, pressure_message.c_str());
   delay(1000);
   WiFi.disconnect();
   WiFi.forceSleepBegin();
-  for (int i = 0; i<= 30; i++){
+  for (int i = 0; i<= MEASURE_INTERVAL/1000; i++){
     Serial.print("Sekunden bis zum Neustart: ");
-    Serial.println(30-i);
+    Serial.println((MEASURE_INTERVAL/1000)-i);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     delay(1000);
   }
