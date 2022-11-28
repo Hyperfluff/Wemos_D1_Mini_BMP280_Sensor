@@ -102,10 +102,19 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println();
+  Serial.println("Temperaturesensor V0, Software Version V1.1");
+  Serial.print("Sensor ID: ");
+  Serial.println(SENSOR_ID);
+  Serial.print("Hostname: ");
+  Serial.println(hostname);
+  Serial.print("Temperature Topic: ");
+  Serial.println(temperature_topic);
+  Serial.print("Pressure Topic: ");
+  Serial.println(pressure_topic);
+  
   pinMode(LED_BUILTIN, OUTPUT);    // Turn the LED off by making the voltage HIGH
   digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off by making the voltage HIGH
   
-  readBMP();
   // Connect to Wi-Fi network with SSID and password
   Serial.print("Connecting to ");
   Serial.println(ssid);
@@ -121,6 +130,10 @@ void setup()
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   digitalWrite(LED_BUILTIN, LOW); // Turn the LED off by making the voltage HIGH
+
+  //connect to sensor and read Values
+  readBMP();
+
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
   lastBlinkMillis = millis();
