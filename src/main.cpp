@@ -79,16 +79,22 @@ void reconnect()
 }
 
 
-void readBMP(){
+void setupBMP(){
   bmp.reset();
   Serial.println("bmp read data test");
+  int failCount = 0;
   while (bmp.begin() != BMP::eStatusOK)
   {
     Serial.println("bmp begin faild");
+    failCount++;
+    if (failCount > 30) ESP.restart();
     delay(2000);
   }
   Serial.println("bmp begin success");
   delay(100);
+}
+
+void readBMP(){
   temperature = bmp.getTemperature();
   pressure = bmp.getPressure();
   Serial.print("Temperature: ");
@@ -97,12 +103,11 @@ void readBMP(){
   Serial.println(pressure);
 }
 
-
 void setup()
 {
   Serial.begin(115200);
   Serial.println();
-  Serial.println("Temperaturesensor V0, Software Version V1.1");
+  Serial.println("Temperaturesensor V0, Software Version V1.2");
   Serial.print("Sensor ID: ");
   Serial.println(SENSOR_ID);
   Serial.print("Hostname: ");
@@ -132,7 +137,7 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW); // Turn the LED off by making the voltage HIGH
 
   //connect to sensor and read Values
-  readBMP();
+  setupBMP();
 
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
@@ -149,6 +154,7 @@ void loop()
   }
   client.loop();
   
+  readBMP();
   String temperature_message = "{\"sensor_id\":";
   temperature_message += String(SENSOR_ID);
   temperature_message +=",\"parameter_id\":2,\"value\":";
@@ -166,7 +172,14 @@ void loop()
   Serial.println(pressure_message);
   client.publish(temperature_topic, temperature_message.c_str());
   client.publish(pressure_topic, pressure_message.c_str());
-  delay(1000);
+  for (int i = 0; i<= MEASURE_INTERVAL/1000; i++){
+    Serial.print("Sekunden bis zur nächsten Messung: ");
+    Serial.println((MEASURE_INTERVAL/1000)-i);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    delay(1000);
+  }
+  
+  /*
   WiFi.disconnect();
   WiFi.forceSleepBegin();
   for (int i = 0; i<= MEASURE_INTERVAL/1000; i++){
@@ -176,6 +189,7 @@ void loop()
     delay(1000);
   }
   ESP.restart();
+  */
   // if (now - lastBlinkMillis > 5000){
   //   ESP.restart();
   // }
