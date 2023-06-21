@@ -24,6 +24,10 @@ const int BmpSetupDelay = 2000;
 const int BmpSetupRetries = 30;
 const int BmpPostSetupDelay = 100;
 
+char hostname[20];
+char temperature_topic[60];
+char pressure_topic[60];
+
 unsigned long lastBlinkMillis = 0;
 float temperature = 0;
 float pressure = 0;
@@ -105,6 +109,11 @@ void readBMP(){
 
 void setup()
 {
+  // Same code as before, replace hardcoded values with dynamic variables
+  sprintf(hostname, "%s%04d", HOSTNAME_PREFIX, SENSOR_ID);
+  sprintf(temperature_topic, "%s%s/temperature", TOPIC_PREFIX, hostname);
+  sprintf(pressure_topic, "%s%s/pressure", TOPIC_PREFIX, hostname);
+  
   Serial.begin(115200);
   Serial.println();
   Serial.println("Temperaturesensor V0, Software Version V1.3");
@@ -116,7 +125,7 @@ void setup()
   Serial.println(temperature_topic);
   Serial.print("Pressure Topic: ");
   Serial.println(pressure_topic);
-  
+
   pinMode(LED_BUILTIN, OUTPUT);    // Turn the LED off by making the voltage HIGH
   digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off by making the voltage HIGH
   
