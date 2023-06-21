@@ -1,19 +1,16 @@
-// include libraries
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include "Wire.h"
 #include "DFRobot_BMP280.h"
-
-// include credentials file
 #include "credentials.h"
 
-// relevant stuff for the BMP280 sensor
-typedef DFRobot_BMP280_IIC BMP; // ******** use abbreviations instead of full names ********
-BMP bmp(&Wire, BMP::eSdoLow);
-#define SEA_LEVEL_PRESSURE 1015.0f // sea level pressure
+#include <ArduinoJson.h> // Include ArduinoJson library
 
-// Wifi / MQTT Stuff
+typedef DFRobot_BMP280_IIC BMP;
+BMP bmp(&Wire, BMP::eSdoLow);
+#define SEA_LEVEL_PRESSURE 1015.0f 
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 unsigned long lastMsg = 0;
@@ -21,8 +18,12 @@ unsigned long lastMsg = 0;
 char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
+// Define magic numbers as constants
+const int ReconnectDelay = 5000;
+const int BmpSetupDelay = 2000;
+const int BmpSetupRetries = 30;
+const int BmpPostSetupDelay = 100;
 
-// variables
 unsigned long lastBlinkMillis = 0;
 float temperature = 0;
 float pressure = 0;
@@ -73,11 +74,10 @@ void reconnect()
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
-      delay(5000);
+      delay(ReconnectDelay);
     }
   }
 }
-
 
 void setupBMP(){
   bmp.reset();
@@ -87,11 +87,11 @@ void setupBMP(){
   {
     Serial.println("bmp begin faild");
     failCount++;
-    if (failCount > 30) ESP.restart();
-    delay(2000);
+    if (failCount > BmpSetupRetries) ESP.restart();
+    delay(BmpSetupDelay);
   }
   Serial.println("bmp begin success");
-  delay(100);
+  delay(BmpPostSetupDelay);
 }
 
 void readBMP(){
@@ -107,7 +107,7 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println();
-  Serial.println("Temperaturesensor V0, Software Version V1.2");
+  Serial.println("Temperaturesensor V0, Software Version V1.3");
   Serial.print("Sensor ID: ");
   Serial.println(SENSOR_ID);
   Serial.print("Hostname: ");
@@ -147,7 +147,6 @@ void setup()
 
 void loop()
 {
-
   if (!client.connected())
   {
     reconnect();
@@ -155,18 +154,21 @@ void loop()
   client.loop();
   
   readBMP();
-  String temperature_message = "{\"sensor_id\":";
-  temperature_message += String(SENSOR_ID);
-  temperature_message +=",\"parameter_id\":2,\"value\":";
-  temperature_message += String(temperature);
-  temperature_message += "}";
   
-  
-  String pressure_message = "{\"sensor_id\":";
-  pressure_message += String(SENSOR_ID);
-  pressure_message +=",\"parameter_id\":1,\"value\":";
-  pressure_message += String(pressure);
-  pressure_message += "}";
+  // Using ArduinoJson library to create JSON objects
+  DynamicJsonDocument tempJson(64);
+  tempJson["sensor_id"] = SENSOR_ID;
+  tempJson["parameter_id"] = 2;
+  tempJson["value"] = temperature;
+  String temperature_message;
+  serializeJson(tempJson, temperature_message);
+
+  DynamicJsonDocument pressureJson(64);
+  pressureJson["sensor_id"] = SENSOR_ID;
+  pressureJson["parameter_id"] = 1;
+  pressureJson["value"] = pressure;
+  String pressure_message;
+  serializeJson(pressureJson, pressure_message);
 
   Serial.println(temperature_message);
   Serial.println(pressure_message);
@@ -178,19 +180,4 @@ void loop()
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     delay(1000);
   }
-  
-  /*
-  WiFi.disconnect();
-  WiFi.forceSleepBegin();
-  for (int i = 0; i<= MEASURE_INTERVAL/1000; i++){
-    Serial.print("Sekunden bis zum Neustart: ");
-    Serial.println((MEASURE_INTERVAL/1000)-i);
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    delay(1000);
-  }
-  ESP.restart();
-  */
-  // if (now - lastBlinkMillis > 5000){
-  //   ESP.restart();
-  // }
 }
