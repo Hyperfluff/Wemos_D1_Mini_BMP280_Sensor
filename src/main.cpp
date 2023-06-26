@@ -2,14 +2,12 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include "Wire.h"
-#include "DFRobot_BMP280.h"
+#include "Adafruit_BME280.h" // Replace BMP280 with BME280
 #include "credentials.h"
 
 #include <ArduinoJson.h> // Include ArduinoJson library
 
-typedef DFRobot_BMP280_IIC BMP;
-BMP bmp(&Wire, BMP::eSdoLow);
-#define SEA_LEVEL_PRESSURE 1015.0f 
+Adafruit_BME280 bme; // Replace DFRobot_BMP280_IIC with Adafruit_BME280
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -27,10 +25,12 @@ const int BmpPostSetupDelay = 100;
 char hostname[20];
 char temperature_topic[60];
 char pressure_topic[60];
+char humidity_topic[60];
 
 unsigned long lastBlinkMillis = 0;
 float temperature = 0;
 float pressure = 0;
+float humidity = 0;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -83,13 +83,12 @@ void reconnect()
   }
 }
 
-void setupBMP(){
-  bmp.reset();
+void setupBME(){
   Serial.println("bmp read data test");
   int failCount = 0;
-  while (bmp.begin() != BMP::eStatusOK)
+  while (!bme.begin(0x76))
   {
-    Serial.println("bmp begin faild");
+    Serial.println("Could not find a valid BME280 sensor, check wiring!");
     failCount++;
     if (failCount > BmpSetupRetries) ESP.restart();
     delay(BmpSetupDelay);
@@ -98,13 +97,16 @@ void setupBMP(){
   delay(BmpPostSetupDelay);
 }
 
-void readBMP(){
-  temperature = bmp.getTemperature();
-  pressure = bmp.getPressure();
+void readBME(){
+  temperature = bme.readTemperature();
+  pressure = bme.readPressure() / 100.0F;
+  humidity = bme.readHumidity();
   Serial.print("Temperature: ");
   Serial.println(temperature);
   Serial.print("Pressure: ");
   Serial.println(pressure);
+  Serial.print("Humidity: ");
+  Serial.println(humidity);
 }
 
 void setup()
@@ -113,7 +115,8 @@ void setup()
   sprintf(hostname, "%s%04d", HOSTNAME_PREFIX, SENSOR_ID);
   sprintf(temperature_topic, "%s%s/temperature", TOPIC_PREFIX, hostname);
   sprintf(pressure_topic, "%s%s/pressure", TOPIC_PREFIX, hostname);
-  
+  sprintf(humidity_topic, "%s%s/humidity", TOPIC_PREFIX, hostname);
+
   Serial.begin(115200);
   Serial.println();
   Serial.println("Temperaturesensor V0, Software Version V1.3");
@@ -146,7 +149,7 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW); // Turn the LED off by making the voltage HIGH
 
   //connect to sensor and read Values
-  setupBMP();
+  setupBME();
 
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
@@ -161,10 +164,10 @@ void loop()
     reconnect();
   }
   client.loop();
-  
-  readBMP();
-  
-  // Using ArduinoJson library to create JSON objects
+
+  readBME();
+
+// Using ArduinoJson library to create JSON objects
   DynamicJsonDocument tempJson(64);
   tempJson["sensor_id"] = SENSOR_ID;
   tempJson["parameter_id"] = 2;
@@ -178,11 +181,21 @@ void loop()
   pressureJson["value"] = pressure;
   String pressure_message;
   serializeJson(pressureJson, pressure_message);
+  
+  DynamicJsonDocument humidityJson(64);
+  humidityJson["sensor_id"] = SENSOR_ID;
+  humidityJson["parameter_id"] = 13; // Humidity parameter id
+  humidityJson["value"] = humidity;
+  String humidity_message;
+  serializeJson(humidityJson, humidity_message);
+
 
   Serial.println(temperature_message);
   Serial.println(pressure_message);
+  Serial.println(humidity_message);
   client.publish(temperature_topic, temperature_message.c_str());
   client.publish(pressure_topic, pressure_message.c_str());
+  client.publish(humidity_topic, humidity_message.c_str());
   for (int i = 0; i<= MEASURE_INTERVAL/1000; i++){
     Serial.print("Sekunden bis zur nächsten Messung: ");
     Serial.println((MEASURE_INTERVAL/1000)-i);
