@@ -1,6 +1,10 @@
 # WEMOS D1 Mini BMP280 mit MQTT
 
+![Fühler](CAD%20Files/Fühler.jpg)
 Das Projekt nutzt einen WEMOS D1 Mini mit einem BMP280 Temperatur- und Luftdrucksensor, um Messdaten zu sammeln und diese an einen MQTT-Broker zu senden.
+
+Kostenpunkt des Fühlers liegt insgesamt unter 25€ pro Stück.
+
 Entwickelt wurde das Projekt von Johannes Röring mit Unterstützung der EMAG Zerbst Maschinenfabrik GmbH welche freundlicherweise die Räumlichkeiten und Hardware bereitgestellt hat.
 
 ## Inhaltsverzeichnis
