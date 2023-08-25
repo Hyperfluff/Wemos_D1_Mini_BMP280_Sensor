@@ -53,9 +53,9 @@ Das Gehäuse für dieses Projekt kann 3D-gedruckt werden. Die STL-Dateien für d
 
 ## Nutzung
 
-1. **Lade den Sketch auf deinen WEMOS D1 Mini hoch**.
-2. **Öffne den seriellen Monitor**, um Debug-Informationen und Messdaten anzuzeigen.
-3. **Der Sensor sendet nun Temperatur- und Druckdaten** an den angegebenen MQTT-Broker.
+1. **Laden sie den Sketch auf deinen WEMOS D1 Mini hoch**.
+2. **Öffnen Sie den seriellen Monitor**, um Debug-Informationen und Messdaten anzuzeigen.
+3. **Der Sensor sendet nun Temperatur- und Druckdaten** an den von ihnen angegebenen MQTT-Broker.
 
 In den Kommenden Monaten wird weitere Dokumentation veröffentlicht um dann diese Sensordaten auch aufzuzeichnen und zu Visualisieren
 dafür Verwendet wird Mosquitto, Node-Red, TimescaleDB und Grafana.
@@ -63,7 +63,8 @@ Gerne gebe ich diese Informationen aber auch auf Anfrage früher heraus, es exis
 
 ## Support
 
-Falls du Fragen oder Probleme hast, kannst du dich gerne an mich wenden.
+Falls Sie Fragen oder Probleme haben, können Sie sich gerne an mich wenden.
+Meine Kontaktdaten finden sie im Profil, Emails bitte an jroering@emag.com
 
 ## Lizenz
 
