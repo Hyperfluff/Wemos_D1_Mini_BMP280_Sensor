@@ -22,7 +22,7 @@ Entwickelt wurde das Projekt von Johannes Röring mit Unterstützung der EMAG Ze
 - **PlatformIO** installiert in **Visual Studio Code**
 - Internetverbindung für die Installation der Bibliotheken
 - Bestehende WLAN Infrastruktur und MQTT Broker
--> Sollte noch kein Broker und weiterführende Infrastruktur bestehen sprechen sie mich gern per Mail (jroering@emag.com) an und ich zeige ihnen gerne wie es weitergeht
+-> Sollte noch kein Broker und weiterführende Infrastruktur bestehen sprechen sie mich gern per Mail (jroering@emag.com) an und ich zeige ihnen wie es weitergeht
 
 ## Installation
 
